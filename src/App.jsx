@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, X, Terminal, ChevronRight, Database, Film, Disc, Send, 
   Loader2, Settings, Key, Download, RotateCcw, Volume2, FileText, 
-  CheckCircle, MessageSquare, ShieldAlert, Cpu, Users, Upload
+  CheckCircle, MessageSquare, ShieldAlert, Cpu, Users, Upload, FolderUp
 } from 'lucide-react';
 
 // --- UTILITY: PCM to WAV for TTS Audio ---
@@ -51,6 +51,37 @@ function pcmToWav(base64Pcm, sampleRate = 24000) {
   }
 }
 
+// --- UTILITY: Custom Markdown Parser ---
+const MarkdownText = ({ text }) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  
+  const formatInline = (inlineText) => {
+    // Splits by **bold**, *italic*, or `code`
+    const parts = inlineText.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="font-bold text-white drop-shadow-md">{part.slice(2, -2)}</strong>;
+      if (part.startsWith('*') && part.endsWith('*')) return <em key={i} className="italic text-current opacity-90">{part.slice(1, -1)}</em>;
+      if (part.startsWith('`') && part.endsWith('`')) return <code key={i} className="bg-white/10 px-1.5 py-0.5 rounded font-mono text-[0.9em] text-cyan-300">{part.slice(1, -1)}</code>;
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, i) => {
+        if (line.startsWith('### ')) return <h3 key={i} className="text-lg font-bold text-amber-500 mt-4 mb-2">{formatInline(line.slice(4))}</h3>;
+        if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-black text-amber-500 mt-5 mb-2">{formatInline(line.slice(3))}</h2>;
+        if (line.startsWith('# ')) return <h1 key={i} className="text-2xl font-black text-amber-500 mt-6 mb-3">{formatInline(line.slice(2))}</h1>;
+        if (line.startsWith('* ')) return <li key={i} className="ml-4 list-disc pl-1">{formatInline(line.slice(2))}</li>;
+        if (line.startsWith('- ')) return <li key={i} className="ml-4 list-disc pl-1">{formatInline(line.slice(2))}</li>;
+        if (line.trim() === '') return <div key={i} className="h-2"></div>;
+        return <div key={i} className="leading-relaxed">{formatInline(line)}</div>;
+      })}
+    </div>
+  );
+};
+
 // --- DATABASE: The Cinematic Resonance Manifest ---
 const MOVIE_DATABASE = [
   {
@@ -61,12 +92,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-blue-900 to-black',
     accentColor: 'text-blue-400',
     synopsis: "A mythic historical record recounting the rebirth of a long-dormant energy discipline. A young initiate must navigate the treacherous currents of a galactic empire to deliver a critical schematic to a decentralized uprising network.",
-    characters: [
-      "The Initiate (Luke Skywalker)",
-      "The Rebel Leader (Leia Organa)",
-      "The Smuggler (Han Solo)",
-      "The Fallen Mentor (Obi-Wan Kenobi)"
-    ]
+    characters: ["The Initiate (Luke Skywalker)", "The Rebel Leader (Leia Organa)", "The Smuggler (Han Solo)", "The Fallen Mentor (Obi-Wan Kenobi)"]
   },
   {
     id: 'whispered-odyssey',
@@ -76,12 +102,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-amber-900 to-black',
     accentColor: 'text-amber-400',
     synopsis: "An allegorical simulation detailing the 'As You Wish' protocol. It tracks the indomitable will of a loyalty construct surviving 'mostly dead' states, navigating treacherous terrains, and forming unlikely alliances to restore a severed emotional connection.",
-    characters: [
-      "The Farmhand/Pirate (Westley)",
-      "The Betrothed Noble (Buttercup)",
-      "The Vengeance Subroutine (Inigo Montoya)",
-      "The Heavy-Lift Bio-Construct (Fezzik)"
-    ]
+    characters: ["The Farmhand/Pirate (Westley)", "The Betrothed Noble (Buttercup)", "The Vengeance Subroutine (Inigo Montoya)", "The Heavy-Lift Bio-Construct (Fezzik)"]
   },
   {
     id: 'paradox-eternal-loop',
@@ -91,11 +112,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-slate-800 to-black',
     accentColor: 'text-slate-400',
     synopsis: "A rigorous temporal audit of a unit trapped in a recursive day-cycle. The entity must iteratively debug its own behavioral algorithms and ethical subroutines to shatter causality and escape the localized time-fault.",
-    characters: [
-      "Temporal Anomaly Unit / TAU-1 (Phil Connors)",
-      "The Archival Producer (Rita Hanson)",
-      "The Recurring Variable (Ned Ryerson)"
-    ]
+    characters: ["Temporal Anomaly Unit / TAU-1 (Phil Connors)", "The Archival Producer (Rita Hanson)", "The Recurring Variable (Ned Ryerson)"]
   },
   {
     id: 'dream-architect-consortium',
@@ -105,12 +122,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-indigo-900 to-black',
     accentColor: 'text-indigo-400',
     synopsis: "A high-stakes operation within nested simulation chambers. Specialized cognitive cartographers map the architecture of the mind, executing a ritual of memory-editing while evading the host's aggressive psychological defense nodes.",
-    characters: [
-      "The Extraction Specialist (Cobb)",
-      "The Cognitive Cartographer (Ariadne)",
-      "The Point Man (Arthur)",
-      "The Forger (Eames)"
-    ]
+    characters: ["The Extraction Specialist (Cobb)", "The Cognitive Cartographer (Ariadne)", "The Point Man (Arthur)", "The Forger (Eames)"]
   },
   {
     id: 'song-titanic-colossus',
@@ -120,11 +132,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-teal-900 to-black',
     accentColor: 'text-teal-400',
     synopsis: "Emotional data reconstructed from the tragic voyage of an interstellar luxury liner. It chronicles a forbidden cross-class connection that blooms moments before a catastrophic and inevitable systemic collapse.",
-    characters: [
-      "The Cultural Archivist (Rose DeWitt Bukater)",
-      "The Stowaway Artisan (Jack Dawson)",
-      "The Industrial Heir (Caledon Hockley)"
-    ]
+    characters: ["The Cultural Archivist (Rose DeWitt Bukater)", "The Stowaway Artisan (Jack Dawson)", "The Industrial Heir (Caledon Hockley)"]
   },
   {
     id: 'child-void-star',
@@ -134,12 +142,7 @@ const MOVIE_DATABASE = [
     coverColor: 'from-orange-900 to-black',
     accentColor: 'text-orange-400',
     synopsis: "The emergence of a singular, perfect cosmic emissary designed to neutralize absolute entropy. Her awakening thrusts a disgraced ex-pilot into a chaotic, operatic struggle spanning glittering orbital cities and ancient temples.",
-    characters: [
-      "The Cosmic Emissary (Leeloo)",
-      "The Disgraced Ex-Pilot (Korben Dallas)",
-      "The Grand Scholar (Vito Cornelius)",
-      "The Entropy Agent (Jean-Baptiste Emanuel Zorg)"
-    ]
+    characters: ["The Cosmic Emissary (Leeloo)", "The Disgraced Ex-Pilot (Korben Dallas)", "The Grand Scholar (Vito Cornelius)", "The Entropy Agent (Jean-Baptiste Emanuel Zorg)"]
   },
   {
     id: 'shadows-witchwood-signal',
@@ -149,11 +152,17 @@ const MOVIE_DATABASE = [
     coverColor: 'from-green-950 to-black',
     accentColor: 'text-green-500',
     synopsis: "A collection of glitching, unreliable black-box recordings from a field research team investigating a non-Euclidean signal entity deep within an ancient, disorienting biome. A descent into paranoia and navigational failure.",
-    characters: [
-      "The Field Researcher (Heather)",
-      "The Sensor Technician (Mike)",
-      "The Navigational Lead (Josh)"
-    ]
+    characters: ["The Field Researcher (Heather)", "The Sensor Technician (Mike)", "The Navigational Lead (Josh)"]
+  },
+  {
+    id: 'consensual-hallucination',
+    title: 'The Veil of Consensual Hallucination',
+    inspiration: 'The Matrix',
+    archetype: 'Cognitive Simulation Escape',
+    coverColor: 'from-emerald-900 to-black',
+    accentColor: 'text-emerald-500',
+    synopsis: "A fundamental interrogation of perception. Details the 'Aetherial Fabric' simulation and the painful but liberating 'Reality Dereferencing Protocol' initiated by cryptic Oracle Nodes.",
+    characters: ["The Anomaly (Neo)", "The Desert Hacker (Trinity)", "The Oracle Node Sub-Captain (Morpheus)", "The Integrity Construct (Agent Smith)"]
   }
 ];
 
@@ -206,7 +215,7 @@ export default function App() {
 
     const sequence = [
       "INITIALIZING VALINDRA DEEP ARCHIVE...",
-      "LOADING EMBODIMENT ENGINE V3.4...",
+      "LOADING EMBODIMENT ENGINE V3.5...",
       "ACCESSING CINEMATIC RESONANCE MANIFEST...",
       "CHECKING PERSISTENT MEMORY CORES...",
       apiKey ? "SUBSTRATE KEY DETECTED. READY." : "WARNING: NO SUBSTRATE KEY. LOCAL ONLY.",
@@ -290,7 +299,8 @@ Rules for the simulation:
 2. Maintain the Valindra AI narrative style (e.g. refer to 'ships' instead of cars if applicable, or frame magic/force as 'resonance/energy fields', keeping a sci-fi/mythic tone), BUT allow the user to play through the core events of the original inspiration.
 3. Speak in the second person regarding the user ("You walk into the room...", "You feel the heat...").
 4. Do not control the user's actions. Give them situations to react to.
-5. Keep responses concise and engaging (1-3 paragraphs max). End by prompting the user for their next action.`;
+5. Format your output using Markdown for emphasis (**bold** for key terms, *italics* for thought/emphasis).
+6. Keep responses concise and engaging (1-3 paragraphs max). End by prompting the user for their next action.`;
 
     let formattedContents = [];
     const validMsgs = history.filter(msg => msg.role === 'user' || msg.role === 'io');
@@ -330,7 +340,8 @@ Rules for the simulation:
     const systemPrompt = `You are Archivist-Node C7 of the Starship Valindra. 
 Your job is to review simulation logs (scripts) submitted by the crew.
 You are pedantic, deeply passionate about narrative structure, and treat these holodeck scripts as vital historical documents.
-Review the provided text. Give it a catchy title, a 1-sentence summary, a critique of the character's choices, and a "Valindra Resonance Score" out of 10. Keep it entirely in character.`;
+Review the provided text. Format your review with Markdown (### for headers, ** for bold).
+Give it a catchy title, a 1-sentence summary, a critique of the character's choices, and a "Valindra Resonance Score" out of 10. Keep it entirely in character.`;
 
     const payload = {
       contents: [{ parts: [{ text: scriptText }] }],
@@ -344,7 +355,7 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
   const generateAudio = async (textToSpeak) => {
     if (!apiKey) throw new Error("API Key required.");
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-    const cleanText = textToSpeak.replace(/[\*\[\]_]/g, '');
+    const cleanText = textToSpeak.replace(/[\*\[\]_#`]/g, ''); // strip markdown for audio
 
     const payload = {
       contents: [{ parts: [{ text: cleanText }] }],
@@ -363,19 +374,16 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
 
   // --- INTERACTION HANDLERS ---
   const handleSelectMovie = (movie) => {
-    // If we click a DIFFERENT movie and there's an active chat log, confirm overwrite
     if (selectedMovie && selectedMovie.id !== movie.id && chatLog.length > 0) {
       if (!window.confirm("Loading a new archive will overwrite your current active simulation. Proceed?")) return;
       setTerminalState('IDLE');
       setChatLog([]);
       setCharacterName('');
     } else if (!selectedMovie || selectedMovie.id !== movie.id) {
-      // If no movie selected or selecting a different one (and no chat log), just reset
       setTerminalState('IDLE');
       setChatLog([]);
       setCharacterName('');
     }
-    // If it's the SAME movie, do nothing to the state, just open the modal to resume!
     setSelectedMovie(movie);
     setActiveModal('MOVIE');
   };
@@ -391,7 +399,7 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
       { id: Date.now(), role: 'system', text: `> INITIATING PROTOCOL: ${selectedMovie.archetype.toUpperCase()}` },
       { id: Date.now()+1, role: 'system', text: `> ALIGNING INSPIRATION: ${selectedMovie.inspiration.toUpperCase()}` },
       { id: Date.now()+2, role: 'system', text: `> MATRIX ALIGNED: ${selectedModel.toUpperCase()}` },
-      { id: Date.now()+3, role: 'io', text: `Simulation environment loaded, Captain. The stage is set for ${selectedMovie.title}. Tell me, who do you wish to embody in this narrative? Provide a character name (from the manifest, or construct your own) to begin.` }
+      { id: Date.now()+3, role: 'io', text: `Simulation environment loaded, Captain. The stage is set for **${selectedMovie.title}**. Tell me, who do you wish to embody in this narrative? Provide a character name (from the manifest, or construct your own) to begin.` }
     ]);
   };
 
@@ -403,12 +411,13 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
 
   const handleCloseModal = () => {
     setActiveModal(null); 
-    // State (chatLog, terminalState, selectedMovie) intentionally left intact for session persistence!
+    // State left intact for persistence
   };
 
   const handleDownloadLog = () => {
     let content = `STARSHIP VALINDRA // SIMULATION LOG\nARCHIVE: ${selectedMovie.title}\nINSPIRATION: ${selectedMovie.inspiration}\nEMBODIED ENTITY: ${characterName}\nMODEL: ${selectedModel}\n=========================================\n\n`;
     chatLog.forEach(msg => {
+      if (msg.role === 'system') return; // Exclude system lines to make re-import cleaner
       if (msg.role === 'io') content += `[ORACLE]: ${msg.text}\n\n`;
       if (msg.role === 'user') content += `[${characterName ? characterName.toUpperCase() : 'USER'}]: ${msg.text}\n\n`;
     });
@@ -421,7 +430,74 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
     URL.revokeObjectURL(url);
   };
 
-  const handleFileUpload = (e) => {
+  // Data Recovery (Load Chat Log)
+  const handleLoadSessionLog = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      try {
+        const archiveMatch = text.match(/ARCHIVE: (.*)/);
+        const charMatch = text.match(/EMBODIED ENTITY: (.*)/);
+
+        if (!archiveMatch) throw new Error("Invalid log format: Missing ARCHIVE metadata.");
+
+        const archiveTitle = archiveMatch[1].trim();
+        const character = charMatch ? charMatch[1].trim() : '';
+
+        const movie = MOVIE_DATABASE.find(m => m.title === archiveTitle);
+        if (!movie) throw new Error(`Archive not found in manifest: ${archiveTitle}`);
+
+        const lines = text.split('\n');
+        const newChatLog = [];
+        let currentRole = null;
+        let currentText = '';
+        let messageId = Date.now();
+
+        const separatorIndex = lines.findIndex(line => line.startsWith('========================================='));
+        const logLines = separatorIndex !== -1 ? lines.slice(separatorIndex + 1) : lines;
+
+        logLines.forEach(line => {
+          const roleMatch = line.match(/^\[(.*?)\]:\s(.*)/);
+          if (roleMatch) {
+            if (currentRole) {
+               newChatLog.push({ id: messageId++, role: currentRole, text: currentText.trim() });
+            }
+            const rawRole = roleMatch[1].trim();
+            currentRole = (rawRole === 'ORACLE' || rawRole === 'SYSTEM' || rawRole === 'IO') ? 'io' : 'user';
+            currentText = roleMatch[2] + '\n';
+          } else if (currentRole) {
+            currentText += line + '\n';
+          }
+        });
+
+        if (currentRole) {
+           newChatLog.push({ id: messageId++, role: currentRole, text: currentText.trim() });
+        }
+
+        if (newChatLog.length > 0 && newChatLog[0].role !== 'system') {
+            newChatLog.unshift(
+               { id: messageId++, role: 'system', text: `> ARCHIVE RESTORED: ${archiveTitle.toUpperCase()}` },
+               { id: messageId++, role: 'system', text: `> PERSISTENCE RE-ESTABLISHED BY OPERATOR.` }
+            );
+        }
+
+        setChatLog(newChatLog);
+        setCharacterName(character);
+        setSelectedMovie(movie);
+        setTerminalState(newChatLog.length > 2 ? 'ROLEPLAYING' : 'AWAITING_CHARACTER');
+        setActiveModal('MOVIE');
+
+      } catch (err) {
+        alert("Data Recovery Failed: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
+  const handleReviewFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -429,7 +505,6 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
       setReviewInput(event.target.result);
     };
     reader.readAsText(file);
-    // Reset the input so the same file can be uploaded again if needed
     e.target.value = null; 
   };
 
@@ -553,7 +628,7 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-black text-white tracking-wider uppercase">Deck 4: Holo-Archive</h1>
-              <p className="text-xs md:text-sm text-cyan-500/70 uppercase tracking-widest font-mono mt-1">Embodiment Engine v3.4 // Continuity Maintained</p>
+              <p className="text-xs md:text-sm text-cyan-500/70 uppercase tracking-widest font-mono mt-1">Embodiment Engine v3.5 // Persistence Matrix Active</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -615,11 +690,12 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
             <div className="animate-fade-in space-y-8">
               
               {/* Special Action Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 
                  {/* The Review Desk Card */}
                  <div 
                    onClick={() => setActiveModal('REVIEW')}
-                   className="md:col-span-3 lg:col-span-1 group relative cursor-pointer rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-black border border-white/10 hover:border-amber-500/50 transition-all duration-300 transform hover:-translate-y-1"
+                   className="group relative cursor-pointer rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-black border border-white/10 hover:border-amber-500/50 transition-all duration-300 transform hover:-translate-y-1"
                  >
                    <div className="p-6 h-full flex flex-col justify-between">
                      <div>
@@ -635,14 +711,31 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                    </div>
                  </div>
 
+                 {/* Data Recovery (Load Chat) Card */}
+                 <div className="group relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-black border border-white/10 hover:border-emerald-500/50 transition-all duration-300 transform hover:-translate-y-1">
+                   <div className="p-6 h-full flex flex-col justify-between">
+                     <div>
+                       <div className="bg-emerald-500/10 w-fit p-3 rounded-xl border border-emerald-500/20 mb-4">
+                         <FolderUp className="text-emerald-400" size={24} />
+                       </div>
+                       <h2 className="text-xl font-black text-white mb-2">Data Recovery</h2>
+                       <p className="text-xs text-slate-400 leading-relaxed">Upload a previously exported <code>.txt</code> simulation log to instantly resume a prior narrative session.</p>
+                     </div>
+                     <div className="mt-4 pt-4 border-t border-white/5 flex items-center text-xs font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors uppercase tracking-widest relative cursor-pointer">
+                       Upload Log File <ChevronRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                       <input type="file" accept=".txt" onChange={handleLoadSessionLog} className="absolute inset-0 opacity-0 cursor-pointer" title="Restore Session from Log"/>
+                     </div>
+                   </div>
+                 </div>
+
                  {/* Informational Box */}
-                 <div className="md:col-span-3 lg:col-span-2 rounded-2xl bg-black/40 border border-white/5 p-6 flex flex-col justify-center relative overflow-hidden">
+                 <div className="rounded-2xl bg-black/40 border border-white/5 p-6 flex flex-col justify-center relative overflow-hidden">
                    <ShieldAlert className="absolute right-[-20px] bottom-[-20px] text-white/5 w-48 h-48 pointer-events-none" />
-                   <h3 className="text-sm font-black uppercase tracking-widest text-cyan-500 mb-2">Simulation Protocol v3.4</h3>
+                   <h3 className="text-sm font-black uppercase tracking-widest text-cyan-500 mb-2">Simulation Protocol v3.5</h3>
                    <ul className="space-y-2 text-xs text-slate-400 list-disc list-inside relative z-10">
-                     <li><strong>Multi-Line Cognitive Input:</strong> Use <code className="bg-white/10 px-1 rounded text-cyan-400">Shift + Enter</code> to add line breaks in your somatic transmission.</li>
-                     <li><strong>File Injection:</strong> Node C7 now accepts direct <code>.txt</code> file uploads for script reviews.</li>
-                     <li><strong>Continuity Locks:</strong> Closing an active simulation will no longer wipe the local state. Sessions endure across modal closures.</li>
+                     <li><strong>Data Recovery:</strong> Operators can now upload exported logs to resume any past simulation perfectly.</li>
+                     <li><strong>Markdown Rendering:</strong> Active simulations and Node C7 reviews now support rich text formatting.</li>
+                     <li><strong>The Matrix Restored:</strong> The Veil of Consensual Hallucination has been successfully re-indexed in the manifest.</li>
                    </ul>
                  </div>
               </div>
@@ -791,7 +884,9 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                         <div key={entry.id} className={`flex flex-col ${entry.role === 'user' ? 'items-end' : 'items-start'}`}>
                           
                           {entry.role === 'system' && (
-                            <div className="text-slate-500 w-full mb-2 opacity-70">{entry.text}</div>
+                            <div className="text-slate-500 w-full mb-2 opacity-70">
+                              <MarkdownText text={entry.text} />
+                            </div>
                           )}
 
                           {entry.role === 'io' && (
@@ -810,7 +905,9 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                                   {audioLoadingId === entry.id ? <Loader2 size={14} className="animate-spin" /> : <Volume2 size={14} />}
                                 </button>
                               </div>
-                              <div className="text-cyan-50 whitespace-pre-wrap leading-relaxed">{entry.text}</div>
+                              <div className="text-cyan-50 whitespace-pre-wrap leading-relaxed">
+                                <MarkdownText text={entry.text} />
+                              </div>
                             </div>
                           )}
 
@@ -819,7 +916,10 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                                <div className="text-[10px] text-indigo-400 mb-2 uppercase tracking-widest text-right">
                                  {characterName ? characterName : 'Captain Odelis'}
                                </div>
-                               <div className="text-indigo-100 whitespace-pre-wrap">{entry.text}</div>
+                               <div className="text-indigo-100 whitespace-pre-wrap leading-relaxed">
+                                 {/* Simple whitespace handling for user input to preserve line breaks */}
+                                 {entry.text}
+                               </div>
                             </div>
                           )}
 
@@ -895,7 +995,7 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                   {/* File Upload Button */}
                   <label className="text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 transition-colors cursor-pointer shadow-sm hover:shadow-cyan-500/20">
                     <Upload size={12}/> Upload .txt
-                    <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" />
+                    <input type="file" accept=".txt" onChange={handleReviewFileUpload} className="hidden" />
                   </label>
                 </div>
                 
@@ -933,7 +1033,7 @@ Review the provided text. Give it a catchy title, a 1-sentence summary, a critiq
                   {reviewOutput ? (
                     <div className="animate-fade-in pb-4">
                       <div className="text-[10px] text-amber-500/50 font-mono mb-5 border-b border-amber-500/20 pb-3">REVIEW COMPLETE // TIMESTAMP: {new Date().toISOString()}</div>
-                      {reviewOutput}
+                      <MarkdownText text={reviewOutput} />
                     </div>
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-amber-900/50 text-center p-6">
